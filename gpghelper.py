@@ -1,7 +1,7 @@
 """
 --GPG Helper v0.1.0--
 
-This project was started on 2020-10-01 UTC by 5a5a8.
+This project was started on 2020-11-01 UTC by 5a5a8.
 Github: https://github.com/5a5a8
 Email: 5a5a8@protonmail.com
 PGP Public Key: https://keys.openpgp.org/vks/v1/by-fingerprint/020F9EEE6909D426FD1077AACE5FFC026D65B0F8
