@@ -1,5 +1,5 @@
 """
---GPG Helper v0.1.0--
+--GPG Helper--
 
 This project was started on 2020-11-01 UTC by 5a5a8.
 Github: https://github.com/5a5a8
@@ -19,6 +19,19 @@ import io
 import os
 import re
 import sys
+
+#application metadata
+gpghelper_version = 'v0.1.1'
+version_release_date = '2020-November-08'
+
+#standard error messages
+file_not_found_error = 'The file was not found. Please try again.'
+passphrase_error = 'Bad passphrase. Please try again.'
+generic_error = 'An unknown error occurred. Please try again.'
+keynotfound_error = 'A key with that number was not found in the list of keys. Please try again'
+private_exists_error = 'A private key exists for the selected public key. The private key must be deleted first.'
+invalid_input_error = 'Input was not valid. Please try again.'
+no_secret_keys_error = 'There are no secret keys in your keyring. You cannot use this feature without one.'
 
 
 class ManageKeys:
@@ -83,7 +96,7 @@ class ManageKeys:
 
 
 		else:
-			Helpers.hold_message('The passphrases did not match.')
+			Helpers.hold_message(passphrase_error)
 			return
 
 		
@@ -101,44 +114,38 @@ class ManageKeys:
 			try:
 				open(working_dir + '/' + key_file)
 			except:
-				Helpers.clear_screen()
-				print('The file was not found. Check the file name and try again.\n')
+				Helpers.hold_message(file_not_found_error)
 				continue
 			else:
-				key_type = Helpers.run_system_command('gpg --show-keys ' + working_dir + '/' + key_file)
+				key_type = Helpers.run_system_command('gpg --show-keys "' + working_dir + '/' + key_file + '"')
 
 				#if it's public, go ahead and import it
 				if key_type[0].startswith('pub'):
-					gpg_output = Helpers.run_system_command('gpg --import ' + working_dir + '/' + key_file)
+					gpg_output = Helpers.run_system_command('gpg --import "' + working_dir + '/' + key_file + '"')
 
 				#we need the passphrase to import a secret key
 				elif key_type[0].startswith('sec'):
 					passphrase = getpass.getpass('Enter the passphrase for the secret key: ') 
 					cmd = 'gpg --pinentry-mode=loopback --passphrase "' + passphrase +'" --import ' + working_dir + '/' + key_file
 					gpg_output = Helpers.run_system_command(cmd) 
-					#print(gpg_output)
-					#time.sleep(10)
 				else:
-					Helpers.hold_message('That didn\'t work. Maybe:\n\t1. The key is already imported.\n\t2. File is not valid')
+					Helpers.hold_message(generic_error)
 					continue
 
 				#check for success by looking at the gpg output for something like "name <email@example.com>" imported
 				#or something like 'Bad passphrase'
 				import_status = []
 				for line in gpg_output:
-					#there are a lot of problems here. I need to look into other solutions for scanning the output
-					#maybe by joining everything into one line or checking the exit status of gpg
-					#one such bug is user sees no output for already imported public key
 					pub_match = re.findall(r'public key "(.+ <.+>)" imported', line)
 					sec_match = re.findall(r'secret key imported', line)
 					bad_pass = re.findall(r'error sending to agent: Bad passphrase', line)
 					unchanged = re.findall(r'".+ <.+>" not changed', line)
 
-					if pub_match or sec_match:
+					if pub_match or sec_match or unchanged:
 						import_status.append(line[5:])
 					
 					if bad_pass:
-						Helpers.hold_message('Bad passphrase for private key.\nAssociated public key will be imported.')
+						Helpers.hold_message(passphrase_error + '\nThe associated public key will still be imported.')
 					
 				Helpers.hold_message( ''.join(import_status) )
 
@@ -163,7 +170,7 @@ class ManageKeys:
 				key_found = True
 				break
 		if key_found == False:
-			Helpers.hold_message('\nA key with that number was not found in the list of public keys. Please try again.\n')
+			Helpers.hold_message(keynotfound_error)
 			return []
 		return [key_email, key_fingerprint]
 
@@ -279,7 +286,7 @@ class ManageKeys:
 						break
 
 				if private_key_exists:
-					Helpers.hold_message('A private key exists with that fingerprint.\nIt must be deleted first.')
+					Helpers.hold_message(private_exists_error)
 					continue
 					
 
@@ -322,7 +329,7 @@ class ManageKeys:
 				return
 			
 			else:
-				Helpers.hold_message('Input was not valid. Please try again.')
+				Helpers.hold_message(invalid_input_error)
 				continue
 
 	def export_key():
@@ -371,10 +378,10 @@ class ManageKeys:
 					#if success, gpg_output will be an empty list
 					gpg_output = Helpers.run_system_command(cmd) 
 					if gpg_output and 'Bad passphrase' in gpg_output[0]: 
-						Helpers.hold_message('Passphrase was incorrect. Try again.')
+						Helpers.hold_message(passphrase_error)
 						continue
 					elif gpg_output: 
-						Helpers.hold_message('Something went wrong. Try again.')
+						Helpers.hold_message(generic_error)
 						continue
 
 				Helpers.hold_message('Key with email: ' + key_email + '\nand fingerprint: ' + key_fingerprint +\
@@ -385,7 +392,7 @@ class ManageKeys:
 			elif choice == '3' or choice.lower() == 'q':
 				return
 			else:
-				Helpers.hold_message('Input was not valid. Please try again.')
+				Helpers.hold_message(invalid_input_error)
 				continue
 
 
@@ -439,7 +446,7 @@ class EncryptPGP:
 			try:
 				open(infile, 'r')
 			except:
-				Helpers.hold_message('The file was not found. Please try again.')
+				Helpers.hold_message(file_not_found_error)
 				continue
 			else:
 				break
@@ -506,7 +513,7 @@ class DecryptPGP:
 		sys.stdout = sys.__stdout__
 
 		if not sec_keys:
-			Helpers.hold_message('There are no secret keys in your keyring, you cannot decrypt anything.')
+			Helpers.hold_message(no_secret_keys_error)
 			return
 
 		#if we have keys, we can go ahead and get the infile and outfile from the user
@@ -517,7 +524,7 @@ class DecryptPGP:
 			try:
 				open(infile, 'r')
 			except:
-				Helpers.hold_message('File not found. Please try again.')
+				Helpers.hold_message(file_not_found_error)
 				continue
 			else:
 				break
@@ -535,7 +542,7 @@ class DecryptPGP:
 				Helpers.hold_message('File does not contain valid PGP data')
 				return
 			elif 'decrypt_message failed' in line:
-				Helpers.hold_message('An error occurred. Is this a valid PGP encrypted file?')
+				Helpers.hold_message(generic_error + '\nIs this a valid PGP encrypted file?')
 			match = re.findall(r'ID ([0-9A-F]{16}),', line)
 			if match: 
 				key_ids.append(match[0])
@@ -574,11 +581,11 @@ class DecryptPGP:
 		
 		#finally, finally, finally, we can decrypt our data
 		#this should work even with multiple private key matches, as gpg actually checks the passphrase against all secret keys
-		cmd = 'gpg --output "' + outfile + '" --pinentry-mode loopback --passphrase "' + passphrase + '" --decrypt ' + infile
+		cmd = 'gpg --output "' + outfile + '" --pinentry-mode loopback --passphrase "' + passphrase + '" --decrypt "' + infile + '"'
 		gpg_output = Helpers.run_system_command(cmd)
 		for line in gpg_output:
 			if 'Bad passphrase' in line:
-				Helpers.hold_message('Bad passphrase. Please try again.')
+				Helpers.hold_message(passphrase_error)
 		Helpers.hold_message('<"' + infile + '"> decrypted and written to file <"' + outfile + '">')
 		return
 		
@@ -615,7 +622,7 @@ class SignPGP:
 			try:
 				open(infile, 'r')
 			except:
-				Helpers.hold_message('The file was not found, please try again.')
+				Helpers.hold_message(file_not_found_error)
 				continue
 		
 			outfile = input('Enter the name of the file to write the signed data to: ')
@@ -626,7 +633,7 @@ class SignPGP:
 			for line in gpg_output:
 				print(line)
 				if 'Bad passphrase' in line:
-					Helpers.hold_message('Bad passphrase. Please try again.')
+					Helpers.hold_message(passphrase_error)
 					continue
 			Helpers.hold_message('<' + infile + '> signed and written to <' + outfile + '>')
 			return
@@ -649,10 +656,10 @@ class VerifyPGP:
 			try:
 				open(infile, 'r')
 			except:
-				Helpers.hold_message('File not found. Please try again.')
+				Helpers.hold_message(file_not_found_error)
 				continue
 
-			cmd = 'gpg --verify ' + infile
+			cmd = 'gpg --verify "' + infile + '"'
 			gpg_output = Helpers.run_system_command(cmd)
 			for line in gpg_output:
 				match = re.findall(r'key ([A-F0-9]{40})', line)
@@ -722,7 +729,7 @@ class Helpers:
 		try:
 			int(key_number)
 		except:
-			Helpers.hold_message('Input was not a number. Try again.')
+			Helpers.hold_message(invalid_input_error)
 			return
 		else:
 			if sec == False:
@@ -733,13 +740,24 @@ class Helpers:
 	def check_system() -> bool:
 		"""returns true if system is posix and gpg is in path, to ensure compatability"""
 
+		if os.name == 'posix':
+			gpg_output = Helpers.run_system_command('gpg --version')
+			if gpg_output[0].startswith('gpg (GnuPG) 2.'):
+				return True
+			else:
+				Helpers.hold_message('GnuPG is not installed. Install it to continue.')
+				return False
+		else:
+			Helpers.hold_message('Non-POSIX system detected. GPGHelper is not compatible with your system.')
+			return False
+
 
 
 
 def main():
 	while True:
 		Helpers.clear_screen()
-		print('Welcome to GPG Helper Version 0.1.0\nWhat what you like to do?\n')
+		print('Welcome to GPG Helper ' + gpghelper_version + '\nWhat what you like to do?\n')
 		print('\t1. (K)ey Management\n\t2. (E)ncrypt\n\t3. (D)ecrypt\n\t4. (S)ign\n\t5. (V)erify\n\t6. (Q)uit')
 		user_input = input('\n>>> ')
 		
@@ -756,28 +774,7 @@ def main():
 		elif user_input == '6' or user_input.lower() == 'q':
 			return
 		else:
-			Helpers.hold_message('Input was invalid. Please try again.')
+			Helpers.hold_message(invalid_input_error)
 
-if __name__ == '__main__':
+if __name__ == '__main__' and Helpers.check_system():
 	main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

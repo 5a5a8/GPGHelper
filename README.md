@@ -85,7 +85,6 @@ Otherwise, GPGHelper will tell you the signature could not be verified.
 #### Fixes and Cleanup
 * Move pieces of repetitive code into functions (e.g. getting a file from the user)
 * Add quotes around user input before we pass it to system commands
-* Add standard error messages and outputs in variables instead of having it typed out each time
 * Tidy up a lot of the comments and add better explainations
 * Fix the function for importing keys - backend works but success/failure messages are inconsistent
 * There are a number of UI/UX issues and inconsistencies to fix
