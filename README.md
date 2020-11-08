@@ -7,7 +7,7 @@ It was started on 2020-November-01.
 
 
 ## Requirements
-GPGHelper is written for linux systems and requires `gpg` to be in the system path - checks for these will be added in later releases.
+GPGHelper is written for linux systems and requires `gpg` to be in the system path. 
 Your system should also have Python 3 installed and up to date.
 
 GPGHelper can be run with `python gpghelper.py`
@@ -27,9 +27,6 @@ A revocation certificate will be created in your home directory.
 #### Importing Keys
 Keys can be imported from either an ASCII-Armor keyfile or a binary keyfile.
 Type a filename, and the data will be imported if the key is valid.
-
-Everything works under the hood for importing keys, but there is a known issue with the UI which mainly occurs when the key is already in the keyring.
-This will be fixed when I find the time.
 
 
 #### Exporting Keys
@@ -84,11 +81,8 @@ Otherwise, GPGHelper will tell you the signature could not be verified.
 ## To Do
 #### Fixes and Cleanup
 * Move pieces of repetitive code into functions (e.g. getting a file from the user)
-* Add quotes around user input before we pass it to system commands
 * Tidy up a lot of the comments and add better explainations
 * Fix the function for importing keys - backend works but success/failure messages are inconsistent
-* There are a number of UI/UX issues and inconsistencies to fix
-* Add function to check system requirements (GPG installed, POSIX system)
 * Check return value of GPG for success
 
 #### Features
